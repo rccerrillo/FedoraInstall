@@ -54,7 +54,7 @@ yesno() {
 
 # dnf5 without prompts; packages that don't exist are skipped (and listed),
 # so one renamed package doesn't abort the whole transaction.
-DNF=(sudo dnf -y --skip-unavailable)
+DNF=(sudo dnf -y)
 
 # Wait for the network (DNS) before downloads; let the user fix it if needed
 wait_net() {
@@ -79,8 +79,8 @@ retry() {
   done
 }
 
-dnf_install()       { wait_net; retry "${DNF[@]}" install "$@"; }
-dnf_install_norec() { wait_net; retry "${DNF[@]}" --setopt=install_weak_deps=False install "$@"; }
+dnf_install()       { wait_net; retry "${DNF[@]}" install --skip-unavailable "$@"; }
+dnf_install_norec() { wait_net; retry "${DNF[@]}" --setopt=install_weak_deps=False install --skip-unavailable "$@"; }
 
 # Snapshot before a step (no-op until Snapper is set up in step 2)
 snap() {

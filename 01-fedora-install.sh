@@ -316,6 +316,11 @@ cmd_install() {
   info "Step 3: Partitioning $DISK"
   umount -R "$MNT" 2>/dev/null || true
   swapoff -a || true
+  # Close a LUKS container left open by an earlier, interrupted run
+  local m
+  for m in $(lsblk -nrpo NAME,TYPE "$DISK" | awk '$2=="crypt" {print $1}'); do
+    cryptsetup close "$m" || die "Couldn't close $m; run: umount -R $MNT && cryptsetup close $m"
+  done
   wipefs -af "$DISK"
   sgdisk --zap-all "$DISK"
   sgdisk -n1:0:+"$ESP_SIZE" -t1:ef00 -c1:EFI \
@@ -494,7 +499,7 @@ mkdir -p /etc/kernel
 echo "root=UUID=$BTRFS_UUID ro rootflags=subvol=@ rd.luks.uuid=$MAPPER $CMDLINE" > /etc/kernel/cmdline
 
 # Kernel, firmware (incl. Intel graphics + Wi-Fi), microcode, GRUB + shim (Secure Boot)
-dnf -y --skip-unavailable install kernel linux-firmware intel-gpu-firmware \
+dnf -y install --skip-unavailable kernel linux-firmware intel-gpu-firmware \
   iwlwifi-mvm-firmware iwlwifi-dvm-firmware realtek-firmware atheros-firmware \
   microcode_ctl grub2-efi-x64 grub2-tools grub2-tools-extra shim-x64 grubby
 ok "Kernel, firmware, GRUB and shim installed"
